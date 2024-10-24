@@ -4,3 +4,4 @@ streamlit
 openai
 python-dotenv
 pymongo
+tiktoken
