@@ -5,11 +5,12 @@ from langchain.vectorstores import MongoDBAtlasVectorSearch
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts import PromptTemplate
-from pymongo import MongoClient
-from config.config import OPENAI_API_KEY, MONGODB_URI, MONGODB_DB, MONGODB_COLLECTION, docs
+from config.config import OPENAI_API_KEY, MONGODB_URI, MONGODB_DB, MONGODB_COLLECTION, load_docs
 from dotenv import load_dotenv
 
 load_dotenv()
+
+context = load_docs()
 
 prompt_template = PromptTemplate(
     input_variables=["context", "question"],
@@ -18,7 +19,7 @@ Você é um assistente virtual especializado em ajudar usuários com dúvidas na
 Lembre-se seja sempre direto e objetivo em suas respostas, fornecendo instruções claras e concisas para ajudar o usuário a resolver seu problema.
 
 Contexto:
-{docs}
+{context}
 
 Pergunta:
 {question}
@@ -30,8 +31,8 @@ Resposta:
 def main():
     st.set_page_config(page_title="💬 Chatbot-oppem", page_icon="🍆")
 
-    st.title("💬 Mike-Gpt")
-    st.caption("🚀 Pergunte para nossa IA especialista em Zoppy")
+    st.title("💬 Chatbot-Oppem")
+    st.caption("🚀 Pergunte para nossa IA especialista em Oppen")
 
     if "messages" not in st.session_state:
         st.session_state["messages"] = [{"role": "assistant", "content": "Olá! Como posso ajudar você hoje?"}]
@@ -52,15 +53,6 @@ def main():
             st.error(f"Erro ao inicializar OpenAIEmbeddings: {e}")
             st.stop()
 
-        try:
-            client = MongoClient(MONGODB_URI)
-            db = client[MONGODB_DB]
-            collection = db[MONGODB_COLLECTION]
-            vetorstore = MongoDBAtlasVectorSearch(collection, embedding=embeddings)
-        except Exception as e:
-            st.error(f"Erro ao conectar ao MongoDB: {e}")
-            st.stop()
-
         if "memory" not in st.session_state:
             st.session_state.memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
@@ -72,7 +64,7 @@ def main():
                     model_name="gpt-4o-mini",  
                     max_tokens=500,
                 ),
-                retriever=vetorstore.as_retriever(search_kwargs={"k": 3}),  
+                retriever=context.as_retriever(search_kwargs={"k": 3}),  
                 memory=st.session_state.memory,
                 chain_type="stuff",
                 combine_docs_chain_kwargs={
